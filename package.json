@@ -1,0 +1,29 @@
+{
+  "name": "liturgical-armenian-translit-js",
+  "version": "1.0.0",
+  "description": "Classical Armenian (Grabar) to English transliteration library based on Western Armenian liturgical pronunciation",
+  "main": "src/translit.js",
+  "scripts": {
+    "test": "node test-paragraph.js"
+  },
+  "keywords": [
+    "armenian",
+    "transliteration",
+    "grabar",
+    "liturgy",
+    "classical-armenian",
+    "western-armenian",
+    "church-slavonic"
+  ],
+  "author": "Fr. Mesrop Ash \u003cpastor@stjohnarmenianchurch.com\u003e",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/stjohnarmenianchurch/liturgical-armenian-translit-js.git"
+  },
+  "files": [
+    "src/",
+    "README.md",
+    "LICENSE"
+  ]
+}
