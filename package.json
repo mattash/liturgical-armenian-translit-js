@@ -1,6 +1,6 @@
 {
   "name": "liturgical-armenian-translit",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Classical Armenian (Grabar) to English transliteration library based on Western Armenian liturgical pronunciation",
   "main": "src/translit.js",
   "scripts": {
