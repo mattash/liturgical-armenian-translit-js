@@ -13,6 +13,7 @@
  */
 
 const dictionary = require('./dictionary.json');
+const dictionaryOverrides = require('./dictionary-overrides.json');
 
 // Fast lookup maps
 const exactMap = new Map();
@@ -24,6 +25,10 @@ function setDictionaryEntry(arm, trans) {
 }
 
 Object.entries(dictionary).forEach(([arm, trans]) => {
+  setDictionaryEntry(arm, trans);
+});
+
+Object.entries(dictionaryOverrides).forEach(([arm, trans]) => {
   setDictionaryEntry(arm, trans);
 });
 

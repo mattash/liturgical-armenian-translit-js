@@ -14,6 +14,12 @@ test('transliterateWord uses dictionary matches for common liturgical words', ()
   assert.equal(transliterateWord('սուրբ'), 'soorp');
 });
 
+test('curated overrides supersede poisoned mined dictionary entries', () => {
+  assert.equal(transliterateWord('զփառս'), 'uzparus');
+  assert.equal(transliterateWord('Նովաւ'), 'Novav');
+  assert.equal(transliterateWord('մարդկան'), 'martgan');
+});
+
 test('transliterate preserves surrounding Latin text and punctuation boundaries', () => {
   assert.equal(
     transliterate('Psalm 50: Ողորմեա՛ զիս, Աստուա՛ծ։'),

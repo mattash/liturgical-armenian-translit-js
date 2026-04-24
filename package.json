@@ -5,6 +5,7 @@
   "main": "src/translit.js",
   "scripts": {
     "analyze": "node analyze.js",
+    "audit:dictionary": "node audit-dictionary.js",
     "build:dictionary": "node build-dict.js",
     "debug": "node debug.js",
     "demo": "node demo.js",

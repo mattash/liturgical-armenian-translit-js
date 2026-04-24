@@ -68,7 +68,7 @@ The repository includes a normalized Divine Liturgy corpus at `corpus/divine-lit
 | Metric | Value |
 | --- | --- |
 | Corpus segments | 220 |
-| Word-level exact accuracy | 82.5% |
+| Aligned word exact accuracy | 88.5% |
 | Paragraph exact match | 53.6% |
 | Paragraph near match (<15% normalized edit distance) | 40.9% |
 | Combined paragraph accuracy | 94.5% |
@@ -76,9 +76,10 @@ The repository includes a normalized Divine Liturgy corpus at `corpus/divine-lit
 ## Development
 
 - `npm test` runs API and regression tests with Node's built-in test runner.
-- `npm run test:corpus` prints corpus-level evaluation metrics and sample mismatches.
+- `npm run test:corpus` prints corpus-level evaluation metrics using sequence-aligned word comparison.
 - `npm run build:dictionary` generates derived dictionary artifacts under `corpus/derived/` from the checked-in corpus.
-- `npm run analyze` prints character frequencies, first-letter mappings, and common misses for corpus analysis.
+- `npm run analyze` prints character frequencies, first-letter mappings, and mismatch buckets.
+- `npm run audit:dictionary` writes a dictionary quality report to `corpus/analysis/dictionary-audit.json`.
 
 ## Limitations
 

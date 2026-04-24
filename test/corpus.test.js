@@ -1,38 +1,18 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { transliterate } = require('../src/translit');
+const { transliterate, transliterateWord } = require('../src/translit');
 const {
+  alignTokenSequences,
   getParallelParts,
   loadCorpus,
+  normalizedEditDistance,
   normalizeForComparison,
   tokenizeWords,
 } = require('../corpus');
 
 function levenshtein(left, right) {
-  const matrix = [];
-
-  for (let row = 0; row <= right.length; row += 1) {
-    matrix[row] = [row];
-  }
-
-  for (let column = 0; column <= left.length; column += 1) {
-    matrix[0][column] = column;
-  }
-
-  for (let row = 1; row <= right.length; row += 1) {
-    for (let column = 1; column <= left.length; column += 1) {
-      matrix[row][column] = right[row - 1] === left[column - 1]
-        ? matrix[row - 1][column - 1]
-        : Math.min(
-            matrix[row - 1][column - 1] + 1,
-            matrix[row][column - 1] + 1,
-            matrix[row - 1][column] + 1
-          );
-    }
-  }
-
-  return matrix[right.length][left.length];
+  return normalizedEditDistance(left, right) * Math.max(left.length, right.length);
 }
 
 test('checked-in Divine Liturgy corpus stays available and populated', () => {
@@ -66,16 +46,17 @@ test('current transliteration quality stays within the documented corpus thresho
       }
     }
 
-    const generatedWords = tokenizeWords(generated.toLowerCase());
-    const expectedWords = tokenizeWords(expected.toLowerCase());
-    const limit = Math.min(generatedWords.length, expectedWords.length);
+    const generatedWords = tokenizeWords(grabar).map((word) => transliterateWord(word));
+    const expectedWords = tokenizeWords(expected);
 
-    for (let index = 0; index < limit; index += 1) {
-      totalWords += 1;
-      if (generatedWords[index] === expectedWords[index]) {
+    alignTokenSequences(generatedWords, expectedWords).operations.forEach((operation) => {
+      if (operation.type === 'match') {
+        totalWords += 1;
         exactWords += 1;
+      } else if (operation.type === 'replace') {
+        totalWords += 1;
       }
-    }
+    });
   });
 
   const exactPartRate = exactParts / parts.length;
@@ -84,5 +65,5 @@ test('current transliteration quality stays within the documented corpus thresho
 
   assert.ok(exactPartRate >= 0.5, `expected paragraph exact rate >= 0.5, got ${exactPartRate}`);
   assert.ok(combinedPartRate >= 0.9, `expected paragraph combined rate >= 0.9, got ${combinedPartRate}`);
-  assert.ok(exactWordRate >= 0.8, `expected word exact rate >= 0.8, got ${exactWordRate}`);
+  assert.ok(exactWordRate >= 0.87, `expected aligned word exact rate >= 0.87, got ${exactWordRate}`);
 });
