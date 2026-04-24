@@ -68,7 +68,7 @@ The repository includes a normalized Divine Liturgy corpus at `corpus/divine-lit
 | Metric | Value |
 | --- | --- |
 | Corpus segments | 220 |
-| Aligned word exact accuracy | 88.5% |
+| Aligned word exact accuracy | 88.9% |
 | Paragraph exact match | 53.6% |
 | Paragraph near match (<15% normalized edit distance) | 40.9% |
 | Combined paragraph accuracy | 94.5% |

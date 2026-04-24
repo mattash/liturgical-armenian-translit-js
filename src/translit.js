@@ -47,6 +47,7 @@ const CHAR_MAP = {
   'Հ': 'H',
   'Ձ': 'Dz',
   'Ղ': 'Gh',
+  'Լ': 'L',
   'Ճ': 'J',
   'Մ': 'M',
   'Յ': 'Y',
@@ -79,6 +80,7 @@ const CHAR_MAP = {
   'հ': 'h',
   'ձ': 'dz',
   'ղ': 'gh',
+  'լ': 'l',
   'ճ': 'j',
   'մ': 'm',
   'յ': 'y',
@@ -150,15 +152,66 @@ function transliterateByRules(word) {
       out += ch;
     }
   }
+
+  if (/^[Փփ]րկ/.test(word)) {
+    out = out.replace(/^[Pp]rg/, (match) => (match[0] === 'P' ? 'Purg' : 'purg'));
+  }
+
   return out;
 }
 
-/** Try to strip common inflection endings and look up stem */
+const SUFFIX_RULES = [
+  {
+    suffix: 'ութեան',
+    apply: (trans) => trans
+      .replace(/ootean$/i, 'utyan')
+      .replace(/utean$/i, 'utyan'),
+  },
+  {
+    suffix: 'ութիւն',
+    apply: (trans) => trans
+      .replace(/ootyun$/i, 'utyoon')
+      .replace(/utyun$/i, 'utyoon'),
+  },
+  {
+    suffix: 'ոյդ',
+    apply: (trans) => trans.endsWith('t') ? `${trans.slice(0, -1)}d` : trans,
+  },
+  {
+    suffix: 'ոյ',
+    apply: (trans) => trans.endsWith('h') ? trans : `${trans}h`,
+  },
+  {
+    suffix: 'եսցուք',
+    apply: (trans) => trans.replace(/tzook$/i, 'tsook'),
+  },
+  {
+    suffix: 'եսցէ',
+    apply: (trans) => trans.replace(/tze$/i, 'tseh').replace(/tzeh$/i, 'tseh'),
+  },
+  {
+    suffix: 'իցի',
+    apply: (trans) => trans.replace(/tzi$/i, 'tsi'),
+  },
+  {
+    suffix: 'եցեր',
+    apply: (trans) => trans.replace(/tzer$/i, 'tser'),
+  },
+  {
+    suffix: 'էք',
+    apply: (trans) => (
+      trans.length >= 2 && /^[Mm]/.test(trans) && !/[aeiouy]d[eé]k$/i.test(trans)
+        ? `${trans[0]}u${trans.slice(1)}`
+        : trans
+    ),
+  },
+];
+
 const SUFFIXES = Array.from(new Set([
-  'ն', 'նն', 'ս', 'ց', 'ով', 'եամբ', 'ութեամբ',
-  'ութիւն', 'ութեան', 'ուց', 'աց', 'եց', 'ումն',
-  'ելոց', 'ացելոց', 'եալ', 'եաց', 'եցեր',
-  'ութիւնդ', 'ութենէ', 'ոց',
+  'էսցուք', 'եսցուք', 'եսցէ', 'ոյդ', 'ութեան', 'ութիւն', 'ութեամբ',
+  'ութիւնդ', 'ութենէ', 'եամբ', 'ելոց', 'ացելոց', 'եցեր', 'եալ',
+  'եաց', 'ումն', 'ութեան', 'ութիւն', 'ուց', 'աց', 'եց', 'ով',
+  'ոյ', 'ոց', 'նն', 'ն', 'ս', 'ց',
 ])).sort((a, b) => b.length - a.length);
 
 function lookupStem(word) {
@@ -166,10 +219,28 @@ function lookupStem(word) {
   for (const sfx of SUFFIXES) {
     if (lc.endsWith(sfx)) {
       const stem = lc.slice(0, -sfx.length);
-      if (lowerMap.has(stem)) return lowerMap.get(stem);
+      if (lowerMap.has(stem)) {
+        return applySuffixRules(word, lowerMap.get(stem));
+      }
     }
   }
   return null;
+}
+
+function applySuffixRules(word, transliteration) {
+  return SUFFIX_RULES.reduce((result, rule) => (
+    word.toLowerCase().endsWith(rule.suffix) ? rule.apply(result, word) : result
+  ), transliteration);
+}
+
+function applyContextualHeuristics(word, transliteration) {
+  return transliteration;
+}
+
+function applyCapitalization(sourceWord, transliteration) {
+  return sourceWord[0] === sourceWord[0].toUpperCase()
+    ? transliteration[0].toUpperCase() + transliteration.slice(1)
+    : transliteration;
 }
 
 /**
@@ -182,20 +253,17 @@ function transliterateWord(word) {
   const clean = word.replace(/[.,:;!?()՛՜՝՞։]/g, '');
   if (!clean) return word;
 
-  if (exactMap.has(clean)) return exactMap.get(clean);
+  if (exactMap.has(clean)) return applyContextualHeuristics(clean, exactMap.get(clean));
 
   const lc = clean.toLowerCase();
   let trans = lowerMap.get(lc);
   if (!trans) trans = lookupStem(clean);
 
   if (trans) {
-    if (clean[0] === clean[0].toUpperCase()) {
-      trans = trans[0].toUpperCase() + trans.slice(1);
-    }
-    return trans;
+    return applyCapitalization(clean, applyContextualHeuristics(clean, trans));
   }
 
-  return transliterateByRules(clean);
+  return applyContextualHeuristics(clean, applySuffixRules(clean, transliterateByRules(clean)));
 }
 
 /**

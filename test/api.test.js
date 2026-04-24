@@ -18,6 +18,15 @@ test('curated overrides supersede poisoned mined dictionary entries', () => {
   assert.equal(transliterateWord('զփառս'), 'uzparus');
   assert.equal(transliterateWord('Նովաւ'), 'Novav');
   assert.equal(transliterateWord('մարդկան'), 'martgan');
+  assert.equal(transliterateWord('զեկեղեցի'), 'zegeghetzi');
+});
+
+test('rule fallback covers missing letters and fallback vowel heuristics', () => {
+  assert.equal(transliterateWord('նազելի'), 'nazeli');
+  assert.equal(transliterateWord('Մտէք'), 'Mudek');
+  assert.equal(transliterateWord('փրկեսցէ'), 'purgestseh');
+  assert.equal(transliterateWord('ողորմութեան'), 'oghormutyan');
+  assert.equal(transliterateWord('զգեստաւորեցեր'), 'zkesdavoretser');
 });
 
 test('transliterate preserves surrounding Latin text and punctuation boundaries', () => {
