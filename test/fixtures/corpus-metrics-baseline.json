@@ -1,0 +1,11 @@
+{
+  "totalParts": 220,
+  "exactParts": 118,
+  "nearParts": 91,
+  "combinedParts": 209,
+  "totalWords": 3375,
+  "exactWords": 3001,
+  "mismatchedWords": 374,
+  "generatedOnlyWords": 57,
+  "expectedOnlyWords": 47
+}

@@ -77,9 +77,12 @@ The repository includes a normalized Divine Liturgy corpus at `corpus/divine-lit
 
 - `npm test` runs API and regression tests with Node's built-in test runner.
 - `npm run test:corpus` prints corpus-level evaluation metrics using sequence-aligned word comparison.
+- `npm run metrics` prints the checked-in corpus metric snapshot in JSON form.
 - `npm run build:dictionary` generates derived dictionary artifacts under `corpus/derived/` from the checked-in corpus.
 - `npm run analyze` prints character frequencies, first-letter mappings, and mismatch buckets.
 - `npm run audit:dictionary` writes a dictionary quality report to `corpus/analysis/dictionary-audit.json`.
+
+The repository also tracks a corpus baseline at `test/fixtures/corpus-metrics-baseline.json`; `npm test` fails if exact-match counts regress below that snapshot.
 
 ## Limitations
 

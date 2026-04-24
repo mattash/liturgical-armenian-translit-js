@@ -9,6 +9,7 @@
     "build:dictionary": "node build-dict.js",
     "debug": "node debug.js",
     "demo": "node demo.js",
+    "metrics": "node report-metrics.js",
     "test": "node --test test/*.test.js",
     "test:corpus": "node test-paragraph.js"
   },

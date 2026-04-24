@@ -1,19 +1,9 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { transliterate, transliterateWord } = require('../src/translit');
-const {
-  alignTokenSequences,
-  getParallelParts,
-  loadCorpus,
-  normalizedEditDistance,
-  normalizeForComparison,
-  tokenizeWords,
-} = require('../corpus');
-
-function levenshtein(left, right) {
-  return normalizedEditDistance(left, right) * Math.max(left.length, right.length);
-}
+const baseline = require('./fixtures/corpus-metrics-baseline.json');
+const { getParallelParts, loadCorpus } = require('../corpus');
+const { calculateCorpusMetrics } = require('../corpus/metrics');
 
 test('checked-in Divine Liturgy corpus stays available and populated', () => {
   const corpus = loadCorpus();
@@ -24,46 +14,42 @@ test('checked-in Divine Liturgy corpus stays available and populated', () => {
 });
 
 test('current transliteration quality stays within the documented corpus thresholds', () => {
-  const parts = getParallelParts();
-  let exactParts = 0;
-  let nearParts = 0;
-  let exactWords = 0;
-  let totalWords = 0;
-
-  parts.forEach(({ grabar, translit: expected }) => {
-    const generated = transliterate(grabar);
-    const normalizedGenerated = normalizeForComparison(generated);
-    const normalizedExpected = normalizeForComparison(expected);
-
-    if (normalizedGenerated === normalizedExpected) {
-      exactParts += 1;
-    } else {
-      const distance = levenshtein(normalizedGenerated, normalizedExpected);
-      const ratio = distance / Math.max(normalizedGenerated.length, normalizedExpected.length);
-
-      if (ratio < 0.15) {
-        nearParts += 1;
-      }
-    }
-
-    const generatedWords = tokenizeWords(grabar).map((word) => transliterateWord(word));
-    const expectedWords = tokenizeWords(expected);
-
-    alignTokenSequences(generatedWords, expectedWords).operations.forEach((operation) => {
-      if (operation.type === 'match') {
-        totalWords += 1;
-        exactWords += 1;
-      } else if (operation.type === 'replace') {
-        totalWords += 1;
-      }
-    });
-  });
-
-  const exactPartRate = exactParts / parts.length;
-  const combinedPartRate = (exactParts + nearParts) / parts.length;
-  const exactWordRate = exactWords / totalWords;
+  const metrics = calculateCorpusMetrics();
+  const exactPartRate = metrics.exactPartRate;
+  const combinedPartRate = metrics.combinedPartRate;
+  const exactWordRate = metrics.exactWordRate;
 
   assert.ok(exactPartRate >= 0.5, `expected paragraph exact rate >= 0.5, got ${exactPartRate}`);
   assert.ok(combinedPartRate >= 0.9, `expected paragraph combined rate >= 0.9, got ${combinedPartRate}`);
   assert.ok(exactWordRate >= 0.87, `expected aligned word exact rate >= 0.87, got ${exactWordRate}`);
+});
+
+test('current corpus metrics do not regress from the checked-in baseline', () => {
+  const metrics = calculateCorpusMetrics();
+
+  assert.equal(metrics.totalParts, baseline.totalParts, 'corpus size changed unexpectedly');
+  assert.ok(
+    metrics.exactParts >= baseline.exactParts,
+    `expected exact paragraph matches >= ${baseline.exactParts}, got ${metrics.exactParts}`
+  );
+  assert.ok(
+    metrics.combinedParts >= baseline.combinedParts,
+    `expected combined paragraph matches >= ${baseline.combinedParts}, got ${metrics.combinedParts}`
+  );
+  assert.ok(
+    metrics.exactWords >= baseline.exactWords,
+    `expected exact aligned words >= ${baseline.exactWords}, got ${metrics.exactWords}`
+  );
+  assert.ok(
+    metrics.mismatchedWords <= baseline.mismatchedWords,
+    `expected mismatched aligned words <= ${baseline.mismatchedWords}, got ${metrics.mismatchedWords}`
+  );
+  assert.ok(
+    metrics.generatedOnlyWords <= baseline.generatedOnlyWords,
+    `expected generated-only tokens <= ${baseline.generatedOnlyWords}, got ${metrics.generatedOnlyWords}`
+  );
+  assert.ok(
+    metrics.expectedOnlyWords <= baseline.expectedOnlyWords,
+    `expected expected-only tokens <= ${baseline.expectedOnlyWords}, got ${metrics.expectedOnlyWords}`
+  );
 });
