@@ -65,7 +65,7 @@ silently override the heuristic.  We should either:
 ## Issue 3: `զ-` prefix pronunciation (`z` vs `uz`)
 
 ### Status
-Open — convention-driven, not rule-driven
+Fixed — rule-based: z before vowels, uz before consonants
 
 ### Description
 Classical Armenian `զ` before a word can be pronounced either `z-` or

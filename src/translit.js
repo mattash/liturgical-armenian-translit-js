@@ -11,10 +11,8 @@
  * - Recognizes liturgical article prefix զ as "uz" or "z"
  * - Preserves word capitalization
  */
-
 const dictionary = require('./dictionary.json');
 const dictionaryOverrides = require('./dictionary-overrides.json');
-
 // Fast lookup maps
 const exactMap = new Map();
 const lowerMap = new Map();
@@ -23,15 +21,12 @@ function setDictionaryEntry(arm, trans) {
   lowerMap.set(arm.toLowerCase(), trans);
   dictionary[arm] = trans;
 }
-
 Object.entries(dictionary).forEach(([arm, trans]) => {
   setDictionaryEntry(arm, trans);
 });
-
 Object.entries(dictionaryOverrides).forEach(([arm, trans]) => {
   setDictionaryEntry(arm, trans);
 });
-
 // Western Armenian character mapping
 const CHAR_MAP = {
   // --- Uppercase consonants (Western voicing shift) ---
@@ -106,32 +101,23 @@ const CHAR_MAP = {
   // --- Special ---
   'և': 'yev',
 };
-
 /**
  * Rule-based transliteration for unknown words.
  */
 const ARMENIAN_VOWELS_RE = /[ԱԵԷԸԻՈՕաեէըիոօև]/;
-
 function transliterateByRules(word) {
   if (!word || word.length === 0) return '';
-
   let s = word;
   let zPrefix = '';
-
   // Strip զ/Զ article prefix so following Յ/Ե still get initial-vowel rules.
-  // The prefix is always rendered as 'z' in rule fallback; use dictionary overrides
-  // for the rare forms that conventionally take 'uz' (e.g. զսուրբ → uzsoorp).
+  // Before a vowel: z. Before a consonant: uz (e.g. uzsoorp).
   if (/^[զԶ]/.test(s)) {
     s = s.slice(1);
-    // The prefix itself is always lowercase; the following word keeps its own case.
-    zPrefix = 'z';
+    zPrefix = (s.length > 0 && ARMENIAN_VOWELS_RE.test(s[0])) ? 'z' : 'uz';
   }
-
   if (s.length === 0) return zPrefix;
-
   const first = s[0];
   const isUpper = first === first.toUpperCase();
-
   // Word-initial Յ/յ before a vowel → H/h.
   // Applies even when preceded by զ, since զ is a declension/article prefix.
   const initialYegh = isUpper ? 'Յ' : 'յ';
@@ -141,14 +127,12 @@ function transliterateByRules(word) {
       s = (isUpper ? 'H' : 'h') + s.slice(1);
     }
   }
-
   // Initial ե before consonant → ye
   if (isUpper) {
     if (s.startsWith('Ե')) s = 'Ye' + s.slice(1);
   } else {
     if (s.startsWith('ե')) s = 'ye' + s.slice(1);
   }
-
   // Digraphs: order matters (longer first)
   const digraphs = [
     ['Ու', 'Oo'],   // uppercase [u] (word-initial)
@@ -163,11 +147,9 @@ function transliterateByRules(word) {
   for (const [arm, lat] of digraphs) {
     s = s.split(arm).join(lat);
   }
-
   // Word-initial ո → vo (after digraphs so ու → oo is already handled)
   if (s.startsWith('ո')) s = 'vo' + s.slice(1);
   if (s.startsWith('Ո')) s = 'Vo' + s.slice(1);
-
   // Character-by-character
   let out = '';
   for (const ch of s) {
@@ -182,17 +164,13 @@ function transliterateByRules(word) {
       out += ch;
     }
   }
-
   if (/^[Փփ]րկ/.test(word)) {
     out = out.replace(/^[Pp]rg/, (match) => (match[0] === 'P' ? 'Purg' : 'purg'));
   }
-
   // Pronunciation aid: avoid awkward vowel cluster when ե/է precedes ու
   out = out.replace(/eoo/g, 'eyoo');
-
   return zPrefix + out;
 }
-
 const SUFFIX_RULES = [
   {
     suffix: 'ութեան',
@@ -239,14 +217,12 @@ const SUFFIX_RULES = [
     ),
   },
 ];
-
 const SUFFIXES = Array.from(new Set([
   'էսցուք', 'եսցուք', 'եսցէ', 'ոյդ', 'ութեան', 'ութիւն', 'ութեամբ',
   'ութիւնդ', 'ութենէ', 'եամբ', 'ելոց', 'ացելոց', 'եցեր', 'եալ',
   'եաց', 'ումն', 'ութեան', 'ութիւն', 'ուց', 'աց', 'եց', 'ով',
   'ոյդ', 'ոց', 'նն', 'ն', 'ս', 'ց', 'ոյ',
 ])).sort((a, b) => b.length - a.length);
-
 function lookupStem(word) {
   const lc = word.toLowerCase();
   for (const sfx of SUFFIXES) {
@@ -259,46 +235,36 @@ function lookupStem(word) {
   }
   return null;
 }
-
 function applySuffixRules(word, transliteration) {
   return SUFFIX_RULES.reduce((result, rule) => (
     word.toLowerCase().endsWith(rule.suffix) ? rule.apply(result, word) : result
   ), transliteration);
 }
-
 function applyContextualHeuristics(word, transliteration) {
   return transliteration;
 }
-
 function applyCapitalization(sourceWord, transliteration) {
   return sourceWord[0] === sourceWord[0].toUpperCase()
     ? transliteration[0].toUpperCase() + transliteration.slice(1)
     : transliteration;
 }
-
 /**
  * Transliterate a single word.
  * Priority: exact → case-insensitive → stem lookup → rules
  */
 function transliterateWord(word) {
   if (!word || word.length === 0) return '';
-
   const clean = word.replace(/[.,:;!?()՛՜՝՞։]/g, '');
   if (!clean) return word;
-
   if (exactMap.has(clean)) return applyContextualHeuristics(clean, exactMap.get(clean));
-
   const lc = clean.toLowerCase();
   let trans = lowerMap.get(lc);
   if (!trans) trans = lookupStem(clean);
-
   if (trans) {
     return applyCapitalization(clean, applyContextualHeuristics(clean, trans));
   }
-
   return applyContextualHeuristics(clean, applySuffixRules(clean, transliterateByRules(clean)));
 }
-
 /**
  * Transliterate a full text.
  */
@@ -310,7 +276,6 @@ function transliterate(text) {
     return parts.map(p => transliterateWord(p)).join('-');
   });
 }
-
 /**
  * Merge custom dictionary entries into the in-memory lookup tables.
  */
@@ -318,25 +283,19 @@ function loadDictionary(dictData) {
   if (!dictData || typeof dictData !== 'object' || Array.isArray(dictData)) {
     throw new TypeError('loadDictionary(dictData) expects an object map of Armenian words to transliterations.');
   }
-
   Object.entries(dictData).forEach(([arm, trans]) => {
     if (typeof arm !== 'string' || typeof trans !== 'string') {
       throw new TypeError('Dictionary entries must use string keys and string transliterations.');
     }
-
     const cleanKey = arm.trim();
     const cleanValue = trans.trim();
-
     if (!cleanKey || !cleanValue) {
       throw new TypeError('Dictionary entries must not be empty.');
     }
-
     setDictionaryEntry(cleanKey, cleanValue);
   });
-
   return dictionary;
 }
-
 module.exports = {
   transliterate,
   transliterateWord,
