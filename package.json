@@ -30,8 +30,12 @@
     "url": "https://github.com/stjohnarmenianchurch/liturgical-armenian-translit-js.git"
   },
   "files": [
-    "src/",
-    "corpus/",
+    "src/translit.js",
+    "src/translit.mjs",
+    "src/dictionary.json",
+    "src/compact-dictionary.json",
+    "src/exact-dictionary.json",
+    "src/dictionary-overrides.json",
     "README.md",
     "LICENSE"
   ],
