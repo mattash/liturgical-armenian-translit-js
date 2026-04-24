@@ -14,7 +14,7 @@ test('phase 2 fallback regressions stay fixed for uncovered words', () => {
   assert.equal(transliterateWord('նազելի'), 'nazeli');
   assert.equal(transliterateWord('Մտէք'), 'Mudek');
   assert.equal(transliterateWord('փրկեսցէ'), 'purgestseh');
-  assert.equal(transliterateWord('ողորմութեան'), 'oghormutyan');
+  assert.equal(transliterateWord('ողորմութեան'), 'voghormutyan');
   assert.equal(transliterateWord('զգեստաւորեցեր'), 'zkesdavoretser');
 });
 

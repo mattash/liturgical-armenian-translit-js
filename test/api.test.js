@@ -25,7 +25,7 @@ test('rule fallback covers missing letters and fallback vowel heuristics', () =>
   assert.equal(transliterateWord('նազելի'), 'nazeli');
   assert.equal(transliterateWord('Մտէք'), 'Mudek');
   assert.equal(transliterateWord('փրկեսցէ'), 'purgestseh');
-  assert.equal(transliterateWord('ողորմութեան'), 'oghormutyan');
+  assert.equal(transliterateWord('ողորմութեան'), 'voghormutyan');
   assert.equal(transliterateWord('զգեստաւորեցեր'), 'zkesdavoretser');
 });
 

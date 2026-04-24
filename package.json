@@ -11,7 +11,8 @@
     "demo": "node demo.js",
     "metrics": "node report-metrics.js",
     "test": "node --test test/*.test.js",
-    "test:corpus": "node test-paragraph.js"
+    "test:corpus": "node test-paragraph.js",
+    "translit": "node -e \"const{transliterate}=require('./src/translit');console.log(transliterate(process.argv[1]))\" --"
   },
   "keywords": [
     "armenian",

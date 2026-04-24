@@ -183,6 +183,9 @@ function transliterateByRules(word) {
     out = out.replace(/^[Pp]rg/, (match) => (match[0] === 'P' ? 'Purg' : 'purg'));
   }
 
+  // Pronunciation aid: avoid awkward vowel cluster when ե/է precedes ու
+  out = out.replace(/eoo/g, 'eyoo');
+
   return zPrefix + out;
 }
 
