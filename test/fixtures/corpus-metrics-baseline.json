@@ -1,11 +1,72 @@
 {
+  "corpusName": "Divine Liturgy",
   "totalParts": 220,
   "exactParts": 118,
   "nearParts": 91,
   "combinedParts": 209,
-  "totalWords": 3375,
-  "exactWords": 3001,
-  "mismatchedWords": 374,
-  "generatedOnlyWords": 57,
-  "expectedOnlyWords": 47
+  "totalWords": 3383,
+  "exactWords": 2998,
+  "mismatchedWords": 385,
+  "generatedOnlyWords": 49,
+  "expectedOnlyWords": 39,
+  "exactPartRate": 0.5363636363636364,
+  "combinedPartRate": 0.95,
+  "exactWordRate": 0.8861956843038723,
+  "mismatchSamples": [
+    {
+      "arm": "[Ալէլուիա], Օրթի (Ոտքի՛)",
+      "expected": "Alleluia, Orthi",
+      "got": "[Alelluia], Orthi (Vodki)"
+    },
+    {
+      "arm": "Պռօսխումէ:(Ուշադրություն)",
+      "expected": "Broskhoomeh.",
+      "got": "Broskhoomeh:(Vovshatrootyoon)"
+    },
+    {
+      "arm": "Խաղաղութիւն ամենեցուն:",
+      "expected": "Khaghaghutyoon amenetzoon.",
+      "got": "Khaghaghootyun amenetsoon:"
+    },
+    {
+      "arm": "Զամենասրբուհի զԱստուածածինն՝ զմիշտ կոյսն Մարիամ, հանդերձ ամենայն սրբովք յիշելով, զՏէր աղաչեսցուք:",
+      "expected": "Zamenayn surpuhi zAsdvadzazinn zmishd gooysn Mariam, hanterts amenayn surpovk hishelov, zDer aghache",
+      "got": "Zamenayn zasdvadzadzin zasdvadzazinn gooysn Gooysn, mariam amenayn serpovk surpovk, uzder aghachestz"
+    },
+    {
+      "arm": "Ըստ ամենայնի, եւ յաղագս ամենեցուն:",
+      "expected": "Usd amenayni yev haghaks amenetzun.",
+      "got": "Usd amenaynee, yev haghakus amenetsoon:"
+    },
+    {
+      "arm": "Ի յարկի Քում սրբութեան եւ ի տեղւոջս փառաբանութեան, հրեշտակաց բնակարանիս եւ մարդկան քաւարանիս, առաջի ",
+      "expected": "Ee hargi surpootyan yev ee deghvotchus parapanootyan, hreshdagatz pnagaranis yev martgan kavaranis, ",
+      "got": "Ee hargi Koom srputyan yev ee parapanootyan parapanootyan, pnagaranis pnagaranis yev martgan arachi,"
+    },
+    {
+      "arm": "Երկիւղածութեամբ լուարուք:",
+      "expected": "Yergyooghatzootyamp luvarook.",
+      "got": "Yergyughadzutyamp luvarook:"
+    },
+    {
+      "arm": "Մեղայ Աստուծոյ: Խոստովանիմ առաջի Աստուծոյ եւ սրբուհւոյ Աստուածածնին, եւ առաջի ամենայն սրբոց, եւ առաջ",
+      "expected": "Megha Asdoudzo. Khosdovanim arachi Asdoodzoh yev surpoovoh Asdvadzadznin yev arachi hark yev yeghpar",
+      "got": "Megha Asdoodzo: Khosdovanim arachi Asdoodzo yev surpoovoh Asdvadzadznin, yev arachi amenayn surpotz,"
+    },
+    {
+      "arm": "*Խոստովանութիւնն եւ Արձակումն*",
+      "expected": "*Khosdovanootyoon yev Artsagoom*",
+      "got": "*Khosdovanootyunn yev Ardzagoomn*"
+    },
+    {
+      "arm": "Տէր Աստուած մեր որոյ կարողութիւնդ անքննին է եւ փառքդ՝ անհասանելի: Որոյ ողորմութիւնդ անչափ է եւ գթութ",
+      "expected": "Der Asdvadz mer, voro garoghootyoonut ankuneen eh yev parkut anhasanelee, voro voghormootyoonut anch",
+      "got": "Der Asdvadz mer voro garoghootyoonut ankuneen eh yev parkut anhasanelee: Voro voghormootyoonut ancha"
+    },
+    {
+      "arm": "(Հրեշտակային շարականի շարունակութիւն) Հազարք հազարաց հրեշտակապետք կան առաջի Քո: Եւ բիւրք բիւրոց հրեշ",
+      "expected": "Hazark hazarats hreshdagabedk gan aratchi ko. Yev pyoork pyurots hreshdagk bashden uzKez Der, yev ee",
+      "got": "(Hreshdagayin hazarats hreshdagabedk) Gan aratchi ko gan arachi Ko: Yev bashden uzkez hreshdagk bash"
+    }
+  ]
 }

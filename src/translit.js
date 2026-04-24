@@ -110,12 +110,37 @@ const CHAR_MAP = {
 /**
  * Rule-based transliteration for unknown words.
  */
+const ARMENIAN_VOWELS_RE = /[ԱԵԷԸԻՈՕաեէըիոօև]/;
+
 function transliterateByRules(word) {
   if (!word || word.length === 0) return '';
 
   let s = word;
+  let zPrefix = '';
+
+  // Strip զ/Զ article prefix so following Յ/Ե still get initial-vowel rules.
+  // The prefix is always rendered as 'z' in rule fallback; use dictionary overrides
+  // for the rare forms that conventionally take 'uz' (e.g. զսուրբ → uzsoorp).
+  if (/^[զԶ]/.test(s)) {
+    s = s.slice(1);
+    // Capitalise prefix if the character that immediately follows զ was upper-case.
+    zPrefix = (s.length > 0 && s[0] === s[0].toUpperCase()) ? 'Z' : 'z';
+  }
+
+  if (s.length === 0) return zPrefix;
+
   const first = s[0];
   const isUpper = first === first.toUpperCase();
+
+  // Word-initial Յ/յ before a vowel → H/h.
+  // Applies even when preceded by զ, since զ is a declension/article prefix.
+  const initialYegh = isUpper ? 'Յ' : 'յ';
+  if (s.startsWith(initialYegh)) {
+    const next = s[1];
+    if (next && ARMENIAN_VOWELS_RE.test(next)) {
+      s = (isUpper ? 'H' : 'h') + s.slice(1);
+    }
+  }
 
   // Initial ե before consonant → ye
   if (isUpper) {
@@ -123,14 +148,14 @@ function transliterateByRules(word) {
   } else {
     if (s.startsWith('ե')) s = 'ye' + s.slice(1);
   }
-  
+
   // Digraphs: order matters (longer first)
   const digraphs = [
     ['ու', 'oo'],   // standard [u]
     ['աւ', 'av'],   // [aw] or [av]
     ['եւ', 'yev'],  // [ev]
     ['իւ', 'yu'],   // Western [yu]
-    ['ոյ', 'uyn'],  // [uyn] or [ooyn]
+    ['ոյ', 'ooy'],  // [ooy]; final ն will add the n where needed (e.g. ոյն → ooyn)
     ['օյ', 'oy'],
   ];
   
@@ -157,7 +182,7 @@ function transliterateByRules(word) {
     out = out.replace(/^[Pp]rg/, (match) => (match[0] === 'P' ? 'Purg' : 'purg'));
   }
 
-  return out;
+  return zPrefix + out;
 }
 
 const SUFFIX_RULES = [
@@ -211,7 +236,7 @@ const SUFFIXES = Array.from(new Set([
   'էսցուք', 'եսցուք', 'եսցէ', 'ոյդ', 'ութեան', 'ութիւն', 'ութեամբ',
   'ութիւնդ', 'ութենէ', 'եամբ', 'ելոց', 'ացելոց', 'եցեր', 'եալ',
   'եաց', 'ումն', 'ութեան', 'ութիւն', 'ուց', 'աց', 'եց', 'ով',
-  'ոյ', 'ոց', 'նն', 'ն', 'ս', 'ց',
+  'ոյդ', 'ոց', 'նն', 'ն', 'ս', 'ց', 'ոյ',
 ])).sort((a, b) => b.length - a.length);
 
 function lookupStem(word) {
