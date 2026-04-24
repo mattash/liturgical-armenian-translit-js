@@ -1,15 +1,17 @@
 {
   "name": "liturgical-armenian-translit",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Classical Armenian (Grabar) to English transliteration library based on Western Armenian liturgical pronunciation",
   "main": "src/translit.js",
   "scripts": {
     "analyze": "node analyze.js",
     "audit:dictionary": "node audit-dictionary.js",
+    "build:browser": "node scripts/build-browser.js",
     "build:dictionary": "node build-dict.js",
     "debug": "node debug.js",
     "demo": "node demo.js",
     "metrics": "node report-metrics.js",
+    "prepublishOnly": "npm run build:browser",
     "test": "node --test test/*.test.js",
     "test:corpus": "node test-paragraph.js",
     "translit": "node -e \"const{transliterate}=require('./src/translit');console.log(transliterate(process.argv[1]))\" --"
@@ -23,11 +25,11 @@
     "western-armenian",
     "church-slavonic"
   ],
-  "author": "Fr. Mesrop Ash \u003cpastor@stjohnarmenianchurch.com\u003e",
+  "author": "Fr. Mesrop Ash <pastor@stjohnarmenianchurch.com>",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/stjohnarmenianchurch/liturgical-armenian-translit-js.git"
+    "url": "git+https://github.com/stjohnarmenianchurch/liturgical-armenian-translit-js.git"
   },
   "files": [
     "src/translit.js",
@@ -36,14 +38,17 @@
     "src/compact-dictionary.json",
     "src/exact-dictionary.json",
     "src/dictionary-overrides.json",
+    "dist/translit.browser.mjs",
     "README.md",
     "LICENSE"
   ],
   "exports": {
     ".": {
+      "browser": "./dist/translit.browser.mjs",
       "import": "./src/translit.mjs",
       "require": "./src/translit.js"
     },
-    "./src/dictionary.json": "./src/dictionary.json"
+    "./src/dictionary.json": "./src/dictionary.json",
+    "./dist/translit.browser.mjs": "./dist/translit.browser.mjs"
   }
 }
