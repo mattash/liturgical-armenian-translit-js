@@ -123,8 +123,8 @@ function transliterateByRules(word) {
   // for the rare forms that conventionally take 'uz' (e.g. զսուրբ → uzsoorp).
   if (/^[զԶ]/.test(s)) {
     s = s.slice(1);
-    // Capitalise prefix if the character that immediately follows զ was upper-case.
-    zPrefix = (s.length > 0 && s[0] === s[0].toUpperCase()) ? 'Z' : 'z';
+    // The prefix itself is always lowercase; the following word keeps its own case.
+    zPrefix = 'z';
   }
 
   if (s.length === 0) return zPrefix;

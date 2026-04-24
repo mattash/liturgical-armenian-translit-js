@@ -8,7 +8,7 @@ via dictionary overrides.
 ## Issue 1: Capitalisation of the article prefix `զ` / `Զ`
 
 ### Status
-Open
+Fixed
 
 ### Description
 When `զ` or `Զ` (the definite-article prefix “z-”) precedes a proper noun
@@ -89,7 +89,7 @@ or continue to handle every `uz-` form as an override?
 ## Issue 4: `ո` + `յ` digraph (`ոյ`) mapping
 
 ### Status
-Fixed in rule fallback (`ooy`), but dictionary may contain old `uyn` values
+Fixed — rule fallback and dictionary entries updated
 
 ### Description
 The classical digraph `ոյ` was historically transliterated as `uyn` in the
@@ -105,7 +105,7 @@ and update them to `ooy` / `ooyn` where appropriate.
 ## Issue 5: Mined-dictionary pollution
 
 ### Status
-Ongoing hygiene task
+Fixed — dictionary rebuilt from corrected alignment
 
 ### Description
 The main `dictionary.json` was mined from a parallel corpus via
@@ -126,3 +126,4 @@ to an unrelated English word that happened to align in the corpus.
 ---
 
 *Last updated: 2026-04-24*
+*Issues 1, 4, 5 resolved 2026-04-24*
