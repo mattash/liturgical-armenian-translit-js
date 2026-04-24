@@ -17,9 +17,14 @@ const dictionary = require('./dictionary.json');
 // Fast lookup maps
 const exactMap = new Map();
 const lowerMap = new Map();
-Object.entries(dictionary).forEach(([arm, trans]) => {
+function setDictionaryEntry(arm, trans) {
   exactMap.set(arm, trans);
   lowerMap.set(arm.toLowerCase(), trans);
+  dictionary[arm] = trans;
+}
+
+Object.entries(dictionary).forEach(([arm, trans]) => {
+  setDictionaryEntry(arm, trans);
 });
 
 // Western Armenian character mapping
@@ -144,12 +149,12 @@ function transliterateByRules(word) {
 }
 
 /** Try to strip common inflection endings and look up stem */
-const SUFFIXES = [
+const SUFFIXES = Array.from(new Set([
   'ն', 'նն', 'ս', 'ց', 'ով', 'եամբ', 'ութեամբ',
   'ութիւն', 'ութեան', 'ուց', 'աց', 'եց', 'ումն',
-  'ելոց', 'ացելոց', 'եալ', 'ուց', 'եաց', 'եցեր',
-  'ութիւնդ', 'ութեամբ', 'ութենէ', 'ոց', 
-];
+  'ելոց', 'ացելոց', 'եալ', 'եաց', 'եցեր',
+  'ութիւնդ', 'ութենէ', 'ոց',
+])).sort((a, b) => b.length - a.length);
 
 function lookupStem(word) {
   const lc = word.toLowerCase();
@@ -200,8 +205,35 @@ function transliterate(text) {
   });
 }
 
+/**
+ * Merge custom dictionary entries into the in-memory lookup tables.
+ */
+function loadDictionary(dictData) {
+  if (!dictData || typeof dictData !== 'object' || Array.isArray(dictData)) {
+    throw new TypeError('loadDictionary(dictData) expects an object map of Armenian words to transliterations.');
+  }
+
+  Object.entries(dictData).forEach(([arm, trans]) => {
+    if (typeof arm !== 'string' || typeof trans !== 'string') {
+      throw new TypeError('Dictionary entries must use string keys and string transliterations.');
+    }
+
+    const cleanKey = arm.trim();
+    const cleanValue = trans.trim();
+
+    if (!cleanKey || !cleanValue) {
+      throw new TypeError('Dictionary entries must not be empty.');
+    }
+
+    setDictionaryEntry(cleanKey, cleanValue);
+  });
+
+  return dictionary;
+}
+
 module.exports = {
   transliterate,
   transliterateWord,
   transliterateByRules,
+  loadDictionary,
 };

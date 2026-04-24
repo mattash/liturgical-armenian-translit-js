@@ -1,70 +1,54 @@
 const fs = require('fs');
+const path = require('path');
 
-const html = fs.readFileSync('/Users/oshii/.openclaw/media/inbound/divine-liturgy-grabar-translit---e5a4fe1a-2422-416f-8dbf-66003aac7a55.html', 'utf-8');
+const { extractWordPairs, loadCorpus } = require('./corpus');
 
-// Extract word pairs from the HTML
-const regex = /\u003cdiv class="lang-content"\u003e\s*\u003cp\u003e([\s\S]*?)\u003c\/p\u003e\s*\u003c\/div\u003e\s*\u003c\/div\u003e\s*\u003cdiv class="lang"\u003e\s*\u003cdiv class="lang-content"\u003e\s*\u003cp\u003e([\s\S]*?)\u003c\/p\u003e/g;
+const corpus = loadCorpus();
+const wordPairs = extractWordPairs(corpus);
 
-const dict = {};
-let match;
+const aggregated = {};
 
-while ((match = regex.exec(html)) !== null) {
-  const arm = match[1].replace(/\s+/g, ' ').trim();
-  const eng = match[2].replace(/\s+/g, ' ').trim();
-  
-  if (!arm || !eng) continue;
-  
-  const armWords = arm.split(/\s+/).filter(w => w.length > 0);
-  const engWords = eng.split(/\s+/).filter(w => w.length > 0);
-  const minLen = Math.min(armWords.length, engWords.length);
-  
-  for (let i = 0; i < minLen; i++) {
-    const a = armWords[i].replace(/[.,:;!?()՛՜՝՞։]/g, '');
-    const e = engWords[i].replace(/[.,:;!?()]/g, '');
-    if (!a || !e) continue;
-    
-    // Normalize case for lookup
-    const key = a.toLowerCase();
-    if (!dict[key]) {
-      dict[key] = { arm: a, freq: 0, trans: {} };
-    }
-    dict[key].freq++;
-    const elc = e.toLowerCase();
-    dict[key].trans[elc] = (dict[key].trans[elc] || 0) + 1;
-    // Use most frequent transliteration for each case variant
+wordPairs.forEach(({ arm, translit }) => {
+  const key = arm.toLowerCase();
+
+  if (!aggregated[key]) {
+    aggregated[key] = { arm, frequency: 0, transliterations: {} };
   }
+
+  aggregated[key].frequency += 1;
+  aggregated[key].transliterations[translit] = (aggregated[key].transliterations[translit] || 0) + 1;
+});
+
+function pickBestTransliteration(transliterations) {
+  return Object.entries(transliterations)
+    .sort((left, right) => right[1] - left[1])[0][0];
 }
 
-// Pick best transliteration for each word
 const bestMappings = {};
-Object.entries(dict).forEach(([key, data]) => {
-  const bestTransliteration = Object.entries(data.trans)
-    .sort((a, b) => b[1] - a[1])[0][0];
-  
-  // Preserve original case where it matters
-  bestMappings[key] = bestTransliteration;
-});
-
-// Also preserve case variants (original Armenian with original transliteration)
 const exactMappings = {};
-Object.entries(dict).forEach(([key, data]) => {
-  const bestTransliteration = Object.entries(data.trans)
-    .sort((a, b) => b[1] - a[1])[0][0];
-  exactMappings[data.arm] = bestTransliteration;
+
+Object.entries(aggregated).forEach(([key, entry]) => {
+  const bestTransliteration = pickBestTransliteration(entry.transliterations);
+  bestMappings[key] = bestTransliteration;
+  exactMappings[entry.arm] = bestTransliteration;
 });
 
-console.log(`Built dictionary with ${Object.keys(bestMappings).length} unique words`);
+const compactMappings = {};
 
-// Save full dictionary
-fs.writeFileSync('dictionary.json', JSON.stringify(bestMappings, null, 2));
-fs.writeFileSync('exact-dictionary.json', JSON.stringify(exactMappings, null, 2));
-
-// Also create a compact version (only words with freq > 1 or longer than 3 chars)
-const compact = {};
-Object.entries(bestMappings).forEach(([k, v]) => {
-  if (k.length >= 3 || dict[k].freq > 1) {
-    compact[k] = v;
+Object.entries(bestMappings).forEach(([key, translit]) => {
+  if (key.length >= 3 || aggregated[key].frequency > 1) {
+    compactMappings[key] = translit;
   }
 });
-fs.writeFileSync('compact-dictionary.json', JSON.stringify(compact, null, 2));
-console.log(`Dictionary sizes — full: ${Object.keys(bestMappings).length}, compact: ${Object.keys(compact).length}`);
+
+const outputDir = path.join(__dirname, 'corpus', 'derived');
+fs.mkdirSync(outputDir, { recursive: true });
+
+fs.writeFileSync(path.join(outputDir, 'dictionary.json'), JSON.stringify(bestMappings, null, 2) + '\n');
+fs.writeFileSync(path.join(outputDir, 'exact-dictionary.json'), JSON.stringify(exactMappings, null, 2) + '\n');
+fs.writeFileSync(path.join(outputDir, 'compact-dictionary.json'), JSON.stringify(compactMappings, null, 2) + '\n');
+
+console.log(`Built dictionaries from ${corpus.parts.length} corpus segments.`);
+console.log(`Unique words: ${Object.keys(bestMappings).length}`);
+console.log(`Compact dictionary entries: ${Object.keys(compactMappings).length}`);
+console.log('Wrote derived artifacts to corpus/derived/.');

@@ -1,77 +1,100 @@
-const fs = require('fs');
-const { transliterate } = require('./src/translit.js');
+const { transliterate } = require('./src/translit');
+const {
+  getParallelParts,
+  loadCorpus,
+  normalizeForComparison,
+  tokenizeWords,
+} = require('./corpus');
 
-const html = fs.readFileSync('/Users/oshii/.openclaw/media/inbound/divine-liturgy-grabar-translit---e5a4fe1a-2422-416f-8dbf-66003aac7a55.html', 'utf-8');
+const corpus = loadCorpus();
+const parts = getParallelParts(corpus);
 
-// Extract paragraph-level pairs
-const regex = /\u003cdiv class="lang-content"\u003e\s*\u003cp\u003e([\s\S]*?)\u003c\/p\u003e\s*\u003c\/div\u003e\s*\u003c\/div\u003e\s*\u003cdiv class="lang"\u003e\s*\u003cdiv class="lang-content"\u003e\s*\u003cp\u003e([\s\S]*?)\u003c\/p\u003e/g;
+let totalParts = 0;
+let exactParts = 0;
+let nearParts = 0;
+let totalWords = 0;
+let exactWords = 0;
+const badParts = [];
 
-let totalPara = 0, exactPara = 0, nearPara = 0, badPara = [];
-let totalWords = 0, exactWords = 0;
+parts.forEach(({ grabar, translit: expected }) => {
+  totalParts += 1;
 
-let m;
-while ((m = regex.exec(html)) !== null) {
-  const armPara = m[1].replace(/\s+/g, ' ').trim();
-  const engPara = m[2].replace(/\s+/g, ' ').trim();
-  if (!armPara || !engPara) continue;
+  const generated = transliterate(grabar);
+  const normalizedGenerated = normalizeForComparison(generated);
+  const normalizedExpected = normalizeForComparison(expected);
 
-  totalPara++;
-  const generated = transliterate(armPara);
-
-  // Normalize both for comparison
-  const normGen = generated.toLowerCase().replace(/[.,:;!?]/g, '');
-  const normExp = engPara.toLowerCase().replace(/[.,:;!?]/g, '');
-
-  if (normGen === normExp) {
-    exactPara++;
+  if (normalizedGenerated === normalizedExpected) {
+    exactParts += 1;
   } else {
-    const dist = levenshtein(normGen, normExp);
-    if (dist / Math.max(normGen.length, normExp.length) < 0.15) {
-      nearPara++;
-    } else {
-      if (badPara.length < 15) {
-        badPara.push({
-          arm: armPara.slice(0, 80),
-          exp: engPara.slice(0, 80),
-          got: generated.slice(0, 80),
-        });
-      }
+    const distance = levenshtein(normalizedGenerated, normalizedExpected);
+    const ratio = distance / Math.max(normalizedGenerated.length, normalizedExpected.length);
+
+    if (ratio < 0.15) {
+      nearParts += 1;
+    } else if (badParts.length < 15) {
+      badParts.push({
+        arm: grabar.slice(0, 100),
+        expected: expected.slice(0, 100),
+        got: generated.slice(0, 100),
+      });
     }
   }
 
-  // Word-level comparison inside paragraphs
-  const genWords = generated.split(/\s+/).map(w => w.replace(/[.,:;!?]/g, ''));
-  const expWords = engPara.split(/\s+/).map(w => w.replace(/[.,:;!?]/g, ''));
-  const minLen = Math.min(genWords.length, expWords.length);
-  for (let i = 0; i < minLen; i++) {
-    if (genWords[i] && expWords[i]) totalWords++;
-    if (genWords[i].toLowerCase() === expWords[i].toLowerCase()) exactWords++;
+  const generatedWords = tokenizeWords(generated.toLowerCase());
+  const expectedWords = tokenizeWords(expected.toLowerCase());
+  const limit = Math.min(generatedWords.length, expectedWords.length);
+
+  for (let index = 0; index < limit; index += 1) {
+    totalWords += 1;
+    if (generatedWords[index] === expectedWords[index]) {
+      exactWords += 1;
+    }
   }
-}
+});
 
-function levenshtein(a, b) {
-  const m = [];
-  for (let i = 0; i <= b.length; i++) m[i] = [i];
-  for (let j = 0; j <= a.length; j++) m[0][j] = j;
-  for (let i = 1; i <= b.length; i++)
-    for (let j = 1; j <= a.length; j++)
-      m[i][j] = b[i-1] === a[j-1] ? m[i-1][j-1] : Math.min(m[i-1][j-1]+1, m[i][j-1]+1, m[i-1][j]+1);
-  return m[b.length][a.length];
-}
+console.log(`Corpus: ${corpus.name} (${totalParts} segments)`);
+console.log('\n=== Paragraph-Level Accuracy ===');
+console.log(`Exact matches: ${exactParts} (${percentage(exactParts, totalParts)}%)`);
+console.log(`Near matches:  ${nearParts} (${percentage(nearParts, totalParts)}%)`);
+console.log(`Combined:      ${exactParts + nearParts} (${percentage(exactParts + nearParts, totalParts)}%)`);
 
-console.log('\n=== PARAGRAPH-LEVEL ACCURACY ===');
-console.log(`Total paragraphs: ${totalPara}`);
-console.log(`Exact matches:    ${exactPara} (${(exactPara/totalPara*100).toFixed(1)}%)`);
-console.log(`Near matches:     ${nearPara} (${(nearPara/totalPara*100).toFixed(1)}%)`);
-console.log(`Off by >15%:     ${totalPara - exactPara - nearPara}`);
-
-console.log('\n=== WORD-LEVEL ACCURACY (aligned by paragraph) ===');
+console.log('\n=== Word-Level Accuracy ===');
 console.log(`Words compared: ${totalWords}`);
-console.log(`Exact matches:  ${exactWords} (${(exactWords/totalWords*100).toFixed(1)}%)`);
+console.log(`Exact matches:  ${exactWords} (${percentage(exactWords, totalWords)}%)`);
 
-console.log('\n=== BAD PARAGRAPHS (first 15) ===');
-badPara.forEach(({ arm, exp, got }) => {
+console.log('\n=== Sample Mismatches ===');
+badParts.forEach(({ arm, expected, got }) => {
   console.log(`\n[ARM] ${arm}`);
-  console.log(`[EXP] ${exp}`);
+  console.log(`[EXP] ${expected}`);
   console.log(`[GOT] ${got}`);
 });
+
+function percentage(value, total) {
+  return ((value / total) * 100).toFixed(1);
+}
+
+function levenshtein(left, right) {
+  const matrix = [];
+
+  for (let row = 0; row <= right.length; row += 1) {
+    matrix[row] = [row];
+  }
+
+  for (let column = 0; column <= left.length; column += 1) {
+    matrix[0][column] = column;
+  }
+
+  for (let row = 1; row <= right.length; row += 1) {
+    for (let column = 1; column <= left.length; column += 1) {
+      matrix[row][column] = right[row - 1] === left[column - 1]
+        ? matrix[row - 1][column - 1]
+        : Math.min(
+            matrix[row - 1][column - 1] + 1,
+            matrix[row][column - 1] + 1,
+            matrix[row - 1][column] + 1
+          );
+    }
+  }
+
+  return matrix[right.length][left.length];
+}

@@ -1,10 +1,15 @@
 {
-  "name": "liturgical-armenian-translit-js",
+  "name": "liturgical-armenian-translit",
   "version": "1.0.0",
   "description": "Classical Armenian (Grabar) to English transliteration library based on Western Armenian liturgical pronunciation",
   "main": "src/translit.js",
   "scripts": {
-    "test": "node test-paragraph.js"
+    "analyze": "node analyze.js",
+    "build:dictionary": "node build-dict.js",
+    "debug": "node debug.js",
+    "demo": "node demo.js",
+    "test": "node --test test/*.test.js",
+    "test:corpus": "node test-paragraph.js"
   },
   "keywords": [
     "armenian",
@@ -23,7 +28,12 @@
   },
   "files": [
     "src/",
+    "corpus/",
     "README.md",
     "LICENSE"
-  ]
+  ],
+  "exports": {
+    ".": "./src/translit.js",
+    "./src/dictionary.json": "./src/dictionary.json"
+  }
 }

@@ -1,94 +1,69 @@
 const fs = require('fs');
-const cheerio = require('cheerio');
+const path = require('path');
 
-// Read the HTML file
-const html = fs.readFileSync('/Users/oshii/.openclaw/media/inbound/divine-liturgy-grabar-translit---e5a4fe1a-2422-416f-8dbf-66003aac7a55.html', 'utf-8');
-const $ = cheerio.load(html);
+const { extractWordPairs, loadCorpus } = require('./corpus');
 
-const pairs = [];
+const corpus = loadCorpus();
+const wordPairs = extractWordPairs(corpus);
 
-// Extract all parallel lang blocks
-$('.langs').each((i, el) => {
-  const langs = $(el).find('.lang-content p');
-  if (langs.length >= 2) {
-    const arm = $(langs[0]).text().trim().replace(/\s+/g, ' ');
-    const eng = $(langs[1]).text().trim().replace(/\s+/g, ' ');
-    if (arm && eng && arm.length > 5) {
-      pairs.push({ arm, eng });
+const characterFrequency = {};
+const firstLetterMap = {};
+
+wordPairs.forEach(({ arm, translit }) => {
+  const firstCh = arm[0];
+  const firstLatin = translit.slice(0, Math.min(3, translit.length));
+
+  if (!firstLetterMap[firstCh]) {
+    firstLetterMap[firstCh] = {};
+  }
+
+  firstLetterMap[firstCh][firstLatin] = (firstLetterMap[firstCh][firstLatin] || 0) + 1;
+
+  for (const ch of arm) {
+    const codePoint = ch.codePointAt(0);
+    if (codePoint >= 0x0530 && codePoint <= 0x058F) {
+      characterFrequency[ch] = (characterFrequency[ch] || 0) + 1;
     }
   }
 });
 
-console.log(`Found ${pairs.length} parallel paragraphs`);
+const analysisDir = path.join(__dirname, 'corpus', 'analysis');
+fs.mkdirSync(analysisDir, { recursive: true });
 
-// Word-level extraction
-const wordPairs = [];
-pairs.forEach(({ arm, eng }) => {
-  const armWords = arm.split(/\s+/).filter(w => w.length > 0);
-  const engWords = eng.split(/\s+/).filter(w => w.length > 0);
-  const minLen = Math.min(armWords.length, engWords.length);
-  for (let i = 0; i < minLen; i++) {
-    const a = armWords[i].replace(/[.,:;!?()]/g, '');
-    const e = engWords[i].replace(/[.,:;!?()]/g, '');
-    if (a && e && a.length > 1) {
-      wordPairs.push({ a, e });
-    }
-  }
-});
+const goodPairs = wordPairs
+  .filter(({ arm, translit }) => {
+    const ratio = arm.length / translit.length;
+    return ratio >= 0.6 && ratio <= 1.5 && arm.length > 2;
+  })
+  .slice(0, 200);
 
-// Extract character mappings with context
-const charMappings = {}; // armChar -> { translit: count }
-const sequences = {}; // multi-char patterns
+fs.writeFileSync(path.join(analysisDir, 'word-pairs.json'), JSON.stringify(wordPairs.slice(0, 1000), null, 2) + '\n');
+fs.writeFileSync(path.join(analysisDir, 'good-pairs.json'), JSON.stringify(goodPairs, null, 2) + '\n');
 
-wordPairs.forEach(({ a, e }) => {
-  // Simple heuristic: scan both and find longest matching substrings
-  // For now, collect first-letter and last-letter mappings
-  const firstCh = a[0];
-  const firstEng = e.slice(0, Math.min(3, e.length));
-  
-  if (!charMappings[firstCh]) charMappings[firstCh] = {};
-  charMappings[firstCh][firstEng] = (charMappings[firstCh][firstEng] || 0) + 1;
-  
-  // Collect all unique Armenian chars
-  for (const ch of a) {
-    if (ch.trim()) {
-      const code = ch.codePointAt(0);
-      if (code >= 0x0530 && code <= 0x058F) {
-        if (!sequences[ch]) sequences[ch] = 0;
-        sequences[ch]++;
-      }
-    }
-  }
-});
+console.log(`Saved ${Math.min(wordPairs.length, 1000)} word pairs to corpus/analysis/word-pairs.json`);
+console.log(`Saved ${goodPairs.length} aligned pairs to corpus/analysis/good-pairs.json`);
 
-console.log('\n=== ARMENIAN CHARACTERS BY FREQUENCY ===');
-Object.entries(sequences)
-  .sort((a, b) => b[1] - a[1])
+console.log('\n=== Armenian Characters By Frequency ===');
+Object.entries(characterFrequency)
+  .sort((left, right) => right[1] - left[1])
   .forEach(([ch, count]) => {
     const code = ch.codePointAt(0).toString(16).toUpperCase().padStart(4, '0');
     console.log(`U+${code} ${ch} : ${count}`);
   });
 
-console.log('\n=== FIRST-LETTER MAPPINGS (top candidates) ===');
-Object.entries(charMappings)
-  .sort((a, b) => Object.values(b[1]).reduce((s, v) => s + v, 0) - Object.values(a[1]).reduce((s, v) => s + v, 0))
+console.log('\n=== First-Letter Mappings ===');
+Object.entries(firstLetterMap)
+  .sort((left, right) => {
+    const leftTotal = Object.values(left[1]).reduce((sum, value) => sum + value, 0);
+    const rightTotal = Object.values(right[1]).reduce((sum, value) => sum + value, 0);
+    return rightTotal - leftTotal;
+  })
   .forEach(([ch, mappings]) => {
-    const sorted = Object.entries(mappings).sort((a, b) => b[1] - a[1]).slice(0, 3);
-    if (sorted.length > 0) {
-      console.log(`${ch} → ${sorted.map(([k, v]) => `${k}(${v})`).join(', ')}`);
-    }
+    const summary = Object.entries(mappings)
+      .sort((left, right) => right[1] - left[1])
+      .slice(0, 3)
+      .map(([latin, count]) => `${latin}(${count})`)
+      .join(', ');
+
+    console.log(`${ch} -> ${summary}`);
   });
-
-// Save all pairs
-fs.writeFileSync('word-pairs.json', JSON.stringify(wordPairs.slice(0, 1000), null, 2));
-console.log('\nSaved', wordPairs.length, 'word pairs to word-pairs.json');
-
-// Now let's derive a comprehensive mapping table by aligning known words
-// We'll use a heuristic approach: find words where Armenian and transliteration lengths are similar
-const goodPairs = wordPairs.filter(({ a, e }) => {
-  const ratio = a.length / e.length;
-  return ratio >= 0.6 && ratio <= 1.5 && a.length > 2;
-}).slice(0, 200);
-
-fs.writeFileSync('good-pairs.json', JSON.stringify(goodPairs, null, 2));
-console.log('Saved', goodPairs.length, 'good aligned pairs to good-pairs.json');

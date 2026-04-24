@@ -1,29 +1,6 @@
-# Liturgical Armenian Transliteration (JavaScript)
+# Liturgical Armenian Transliteration
 
-Convert Classical Armenian (Grabar) Unicode text to English transliteration using the Western Armenian liturgical pronunciation conventions found in the Divine Liturgy.
-
-## Background
-
-This library was built from the parallel text of the **Divine Liturgy** (Սուրբ Պատարագ), containing ~1,000 unique Armenian words with their liturgical transliteration. It uses a hybrid approach:
-
-1. **Dictionary lookup** — exact or near-exact matches for known liturgical words (~85% hit rate)
-2. **Rule-based fallback** — Western Armenian phonology for unknown words
-
-The transliteration follows the conventions used in the Armenian Church's Western Diocese liturgical texts, where:
-
-| Letter | Eastern | Transliteration |
-|--------|---------|----------------|
-| Բ | [b] | **p** |
-| Պ | [p] | **b** |
-| Գ | [g] | **k** |
-| Կ | [k] | **g** |
-| Դ | [d] | **t** |
-| Տ | [t] | **d** |
-| Թ | [tʰ] | **t** |
-| Ու | [u] | **oo** |
-| Եւ | [ev] | **yev** |
-| Կեցո | (word) | **getzo** |
-| Աստուած | (word) | **Asdvadz** |
+Convert Classical Armenian (Grabar) Unicode text to English transliteration using Western Armenian liturgical pronunciation conventions.
 
 ## Installation
 
@@ -31,94 +8,84 @@ The transliteration follows the conventions used in the Armenian Church's Wester
 npm install liturgical-armenian-translit
 ```
 
-Or use directly:
+For local development:
 
-```javascript
-const { transliterate } = require('./src/translit.js');
+```bash
+npm test
+npm run test:corpus
 ```
 
 ## Usage
 
-### Single word
-
 ```javascript
-const { transliterateWord } = require('liturgical-armenian-translit');
+const {
+  loadDictionary,
+  transliterate,
+  transliterateWord,
+} = require('liturgical-armenian-translit');
 
 transliterateWord('Աստուած');
-// → "Asdvadz"
+// => "Asdvadz"
 
-transliterateWord('կեցո');
-// → "getzo"
+transliterate('Տէր Աստուած մեր, կեցո՛ զմեզ եւ ողորմեա՛։');
+// => "Der Asdvadz mer, getzo uzmez yev voghormia:"
 
-transliterateWord('խաղաղութիւն');
-// → "khaghaghootyun"
+loadDictionary({ Մահր: 'Mahr', գետ: 'get' });
+transliterateWord('Մահր');
+// => "Mahr"
 ```
 
-### Full text
-
-```javascript
-const { transliterate } = require('liturgical-armenian-translit');
-
-const armenianText = "Տէր Աստուած մեր, կեցո՛ զմեզ եւ ողորմեա՛:";
-console.log(transliterate(armenianText));
-// → "Der Asdvadz mer, getzo uzmez yev voghormia:"
-```
-
-### Using the dictionary directly
-
-The library ships with a JSON dictionary of ~1,000 liturgical words:
+The bundled dictionary is also available directly:
 
 ```javascript
 const dictionary = require('liturgical-armenian-translit/src/dictionary.json');
-console.log(dictionary['սուրբ']); // → "soorp"
+console.log(dictionary['սուրբ']);
+// => "soorp"
 ```
 
 ## API
 
 ### `transliterate(text)`
-Transliterate a full string (paragraph, sentence, or phrase). Non-Armenian characters pass through unchanged.
+
+Transliterate full Armenian text while leaving non-Armenian content unchanged.
 
 ### `transliterateWord(word)`
-Transliterate a single word. Prioritizes dictionary lookup, then falls back to rule-based phonology.
+
+Transliterate a single word using exact lookup, case-insensitive lookup, stem lookup, then rule-based fallback.
 
 ### `transliterateByRules(word)`
-Pure rule-based transliteration for unknown words (Western Armenian phonology).
+
+Apply only the fallback phonology rules.
 
 ### `loadDictionary(dictData)`
-Extend the built-in dictionary with your own word mappings at runtime.
 
-```javascript
-const { loadDictionary } = require('liturgical-armenian-translit');
-loadDictionary({ 'մահր': 'mahr', 'գետ': 'get' });
-```
+Merge custom Armenian-to-Latin mappings into the in-memory dictionary at runtime.
 
 ## Accuracy
 
-Tested against the full text of the Divine Liturgy:
+The repository includes a normalized Divine Liturgy corpus at `corpus/divine-liturgy.json`, derived from the source export referenced in this project. Running `npm run test:corpus` currently measures:
 
 | Metric | Value |
-|--------|-------|
-| Unique words in dictionary | ~1,000 |
-| Word-level exact accuracy | **85.9%** |
-| Paragraph exact match | **53.2%** |
-| Paragraph near match (≤15% error) | **38.2%** |
-| Combined paragraph accuracy | **91.4%** |
+| --- | --- |
+| Corpus segments | 220 |
+| Word-level exact accuracy | 82.5% |
+| Paragraph exact match | 53.6% |
+| Paragraph near match (<15% normalized edit distance) | 40.9% |
+| Combined paragraph accuracy | 94.5% |
 
-Most remaining errors are due to:
-- Complex morphological inflections not in the dictionary
-- Dialectal/pronunciation variations in the source text
-- HTML parsing artifacts in the training data
+## Development
+
+- `npm test` runs API and regression tests with Node's built-in test runner.
+- `npm run test:corpus` prints corpus-level evaluation metrics and sample mismatches.
+- `npm run build:dictionary` generates derived dictionary artifacts under `corpus/derived/` from the checked-in corpus.
+- `npm run analyze` prints character frequencies, first-letter mappings, and common misses for corpus analysis.
 
 ## Limitations
 
-- Optimized for **liturgical Classical Armenian**, not modern Eastern or Western colloquial speech
-- Does not handle **modern reformed orthography** (post-1922 spellings)
-- Proper nouns and foreign loanwords may need manual supplementation
+- Optimized for liturgical Classical Armenian, not modern spoken Eastern or Western Armenian.
+- Morphology handling is heuristic and intentionally lightweight.
+- Proper nouns and rare forms may still need custom dictionary entries.
 
 ## License
 
-MIT — free to use, modify, and distribute.
-
-## Acknowledgments
-
-Built from the parallel transliterated text of the Divine Liturgy of the Armenian Apostolic Church, as used in the Western Diocese of North America.
+MIT
