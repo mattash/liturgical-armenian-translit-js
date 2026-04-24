@@ -164,6 +164,10 @@ function transliterateByRules(word) {
     s = s.split(arm).join(lat);
   }
 
+  // Word-initial ո → vo (after digraphs so ու → oo is already handled)
+  if (s.startsWith('ո')) s = 'vo' + s.slice(1);
+  if (s.startsWith('Ո')) s = 'Vo' + s.slice(1);
+
   // Character-by-character
   let out = '';
   for (const ch of s) {
