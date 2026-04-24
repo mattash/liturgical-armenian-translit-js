@@ -151,6 +151,7 @@ function transliterateByRules(word) {
 
   // Digraphs: order matters (longer first)
   const digraphs = [
+    ['Ու', 'Oo'],   // uppercase [u] (word-initial)
     ['ու', 'oo'],   // standard [u]
     ['աւ', 'av'],   // [aw] or [av]
     ['եւ', 'yev'],  // [ev]
