@@ -36,7 +36,10 @@
     "LICENSE"
   ],
   "exports": {
-    ".": "./src/translit.js",
+    ".": {
+      "import": "./src/translit.mjs",
+      "require": "./src/translit.js"
+    },
     "./src/dictionary.json": "./src/dictionary.json"
   }
 }
